@@ -13,6 +13,10 @@ Determine the scope to analyze:
 
 State your scope at the start: "Scanning [git diff / full repo] for production resilience issues..."
 
+If `git diff HEAD` returns empty (no uncommitted changes), state: "No uncommitted changes found. Run `/vibe-check --full` to scan the entire repo, or make some changes first." Do not proceed with an empty scan.
+
+For `--full` scans: analyze all source code files tracked by git. Exclude `node_modules/`, `vendor/`, `dist/`, `build/`, `.git/`, lock files (`package-lock.json`, `yarn.lock`, `poetry.lock`), and generated files. Focus on files your team wrote.
+
 ## Pass 1 — Fixed Checklist
 
 Analyze the scoped code against each of these known AI-generated code failure patterns. Check every item — do not skip categories because they seem unlikely.
@@ -39,7 +43,7 @@ Analyze the scoped code against each of these known AI-generated code failure pa
 - [ ] Off-by-one errors in loop bounds, array indexing, date ranges
 
 ### Untested Branches
-- [ ] Conditional branches (if/else/switch cases) with no corresponding test or exercise path
+- [ ] Untested branches: If test files are in scope, note conditional branches (if/else/switch cases) with no corresponding test. **If tests are not in scope, report the code-path risk only — do not assert that tests are missing without evidence.**
 - [ ] Error paths that are declared (catch blocks, error handlers) but contain only a comment or console.log
 - [ ] Early return conditions that skip critical logic further down
 
@@ -62,6 +66,14 @@ Look for domain-specific failure modes:
 - Queue/worker code: at-least-once vs exactly-once delivery assumptions
 - Any other domain-specific risks you infer from the code
 
+## Severity Rubric
+
+Use this rubric to assign severity:
+- 🔴 **CRITICAL**: Directly exploitable in production, high blast radius, or certain to cause data loss/outage. Fix before pushing.
+- 🟡 **WARNING**: Potential failure under specific conditions, or a pattern that will cause problems as the codebase grows. Fix in the next session.
+
+When evidence is incomplete or speculative, add `(Needs verification)` to the finding description rather than asserting it as fact.
+
 ## Output Format
 
 Produce your findings in this exact format:
@@ -81,7 +93,7 @@ VIBE CHECK — Production Resilience
 ✅ PASS — Resource Leaks: no leaks detected
 
 SUMMARY: 1 critical, 1 warning
-Scope: git diff
+Scope: git diff (uncommitted changes)
 ```
 
 If no issues are found anywhere:
@@ -92,5 +104,5 @@ VIBE CHECK — Production Resilience
 ✅ All clear — no production resilience issues found.
 
 SUMMARY: 0 critical, 0 warnings
-Scope: git diff
+Scope: git diff (uncommitted changes)
 ```
