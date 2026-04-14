@@ -13,6 +13,10 @@ Determine the scope to analyze:
 
 State your scope at the start: "Building cognitive debt map for [git diff / full repo]..."
 
+If `git diff HEAD` returns empty (no uncommitted changes), state: "No uncommitted changes found. Run `/vibe-explain --full` to scan the entire repo, or make some changes first." Do not proceed with an empty scan.
+
+For `--full` scans: analyze all source code files tracked by git. Exclude `node_modules/`, `vendor/`, `dist/`, `build/`, `.git/`, lock files (`package-lock.json`, `yarn.lock`, `poetry.lock`), and generated files. Focus on files your team wrote.
+
 ## Pass 1 — Cognitive Debt Checklist
 
 Scan the scoped code and flag every function, block, or section that exhibits any of these cognitive debt markers. Err on the side of flagging — it is better to explain something simple than to leave something opaque unexamined.
@@ -23,7 +27,7 @@ Scan the scoped code and flag every function, block, or section that exhibits an
 - [ ] Code that produces a side effect without making that side effect obvious from reading the code
 
 ### Complexity Barriers
-- [ ] Logic that a junior developer couldn't follow in 30 seconds
+- [ ] Logic with branch depth > 3, more than 3 chained transforms, regex patterns, bitwise operations, or hidden state dependencies — **do not flag simple getters, setters, or one-line guards**
 - [ ] Nested conditionals deeper than 3 levels with no simplifying comments
 - [ ] Regular expressions with no comment explaining what they match or why
 - [ ] Bitwise operations with no comment explaining their purpose
@@ -47,9 +51,15 @@ Scan the scoped code and flag every function, block, or section that exhibits an
 - [ ] Function names that describe implementation rather than intent (e.g., `doProcessingStep2()` vs `validatePaymentToken()`)
 - [ ] Boolean variables with non-question-form names (`processed` instead of `isProcessed`, `valid` instead of `isValid`)
 
-## Pass 2 — Plain-English Explanations
+## Pass 2 — Adaptive Analysis
+
+After completing the checklist, ask: "Given this code's domain and purpose, are there any domain-specific comprehension risks not covered above?" For example: financial code with implicit currency/rounding assumptions, async code with non-obvious execution ordering, or multi-tenant code with implicit isolation assumptions.
+
+## Pass 3 — Plain-English Explanations
 
 For every block you flagged in Pass 1, generate a cognitive debt entry with three parts:
+
+**What counts as a block:** Count each named function, class method, and exported constant as one block. Do not count imports, type definitions, or one-line assignments. State the total at the end as "X opaque blocks out of Y named functions/methods/constants scanned."
 
 1. **What it does:** A plain-English walkthrough in 3–5 sentences maximum. Write as if explaining to a smart person who has never seen this code.
 2. **Assumes:** The key precondition(s) that must be true for this code to work correctly. What does it depend on that is not visible inside it?
@@ -92,7 +102,7 @@ VIBE EXPLAIN — Cognitive Debt Map
   is no way to find all the places it is used — search for 0.0274 will miss
   any rounding variations.
 
-DEBT SCORE: 2 opaque blocks out of 8 total blocks scanned (0.25 — Moderate 🟡)
+DEBT SCORE: 2 opaque blocks out of 8 named functions/methods/constants scanned (0.25 — Moderate 🟡)
 
 Debt scale: < 0.2 Low ✅ | 0.2–0.4 Moderate 🟡 | > 0.4 High 🔴
 ```
@@ -104,5 +114,5 @@ VIBE EXPLAIN — Cognitive Debt Map
 ──────────────────────────────────
 ✅ All clear — code is comprehensible. No opaque blocks found.
 
-DEBT SCORE: 0 opaque blocks out of Y total blocks scanned (0.0 — Low ✅)
+DEBT SCORE: 0 opaque blocks out of Y named functions/methods/constants scanned (0.0 — Low ✅)
 ```
