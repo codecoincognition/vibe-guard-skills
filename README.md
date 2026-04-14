@@ -1,8 +1,10 @@
 # vibe-guard-skills
 
-> Personal quality guard for solo vibe coders. Catch everything before you push.
+> Catch production bugs, security holes, and AI blind spots before you push.
 
-AI coding tools are fast. But AI-generated code breaks in production, has security holes, and accumulates code you don't fully understand. **vibe-guard-skills** is a set of Claude Code skills that run a 3-pass audit at the end of every coding session — before you `git push`.
+AI-generated code breaks in production, leaves security holes, and accumulates logic you don't fully own. **vibe-guard-skills** catches all three — before you push.
+
+A set of Claude Code skills that run a 3-pass audit at the end of every session: production resilience, security vulnerabilities, and code comprehension.
 
 ---
 
@@ -16,13 +18,27 @@ AI coding tools are fast. But AI-generated code breaks in production, has securi
 
 ---
 
+## Requirements
+
+- [Claude Code](https://code.claude.com) (any version)
+
+---
+
 ## Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/vibe-guard-skills/main/install.sh | bash
 ```
 
+> **Note for contributors:** Replace `YOUR_GITHUB_USERNAME` with `codecoincognition` (or the actual org) when the repo goes live.
+
 Installs to `~/.claude/skills/` (global) or `.claude/skills/` (project-local) automatically.
+
+---
+
+## How it works
+
+Vibe Guard is a Claude Code skill — a structured prompt that runs entirely inside your Claude Code session. No external API calls. No code leaves your machine. Claude reads your diff and applies three sequential audit passes using a fixed checklist of known AI failure patterns, followed by an adaptive pass specific to your code's domain.
 
 ---
 
@@ -48,6 +64,8 @@ Run individual passes when you need a focused check:
 /vibe-explain  # comprehension only
 ```
 
+> **Tip:** Run `/vibe-guard` before committing, not just before pushing — it scans uncommitted changes in your working tree (`git diff HEAD`). Use `/vibe-guard --full` for a full repo audit.
+
 ---
 
 ## Sample Report
@@ -56,7 +74,7 @@ Run individual passes when you need a focused check:
 ╔══════════════════════════════════════╗
 ║        VIBE GUARD REPORT             ║
 ╚══════════════════════════════════════╝
-Scope: git diff (last commit)
+Scope: git diff (uncommitted changes)
 
 🔴 CRITICAL — Fix before pushing
 ────────────────────────────────
@@ -83,6 +101,7 @@ Scope: git diff (last commit)
 
 ══════════════════════════════════════
 SUMMARY: 2 critical · 1 warning · 1 debt item
+Debt score: 1/6 blocks (0.17 — Low ✅)
 ══════════════════════════════════════
 ```
 
@@ -120,3 +139,9 @@ Each skill uses a **two-pass approach**: a fixed checklist of known AI failure p
 ## License
 
 MIT
+
+---
+
+## GitHub Topics
+
+If you star this repo, also check: `claude-code` `claude-skills` `vibe-coding` `ai-coding` `code-review` `security-audit` `developer-tools`
