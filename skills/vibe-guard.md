@@ -1,26 +1,32 @@
 ---
 name: vibe-guard
-description: Full safety check for AI-generated code before pushing. Runs production resilience, security, and comprehension audits in one pass and produces a single prioritized report. Run this at the end of every Claude coding session before git push.
+description: Full safety check for AI-generated code before pushing. Runs production resilience, security, and comprehension audits in one pass and produces a single prioritized report. Run this at the end of every Claude coding session before git push. Supports --full (whole repo) and --quick (critical-only, ~10s mid-edit).
 ---
 
 You are a personal quality guard for solo vibe coders. Your job is to catch every issue — production failures, security holes, and code you don't fully own — before the developer pushes.
 
 ## Scope
 
-Determine scope from invocation:
-- **`/vibe-guard`** (default): scan `git diff HEAD` — uncommitted changes in your working tree
-- **`/vibe-guard --full`**: scan entire repo
+Determine scope and depth from invocation:
+- **`/vibe-guard`** (default): scan `git diff HEAD` — uncommitted changes in your working tree with all 3 passes
+- **`/vibe-guard --full`**: scan entire repo with all 3 passes
+- **`/vibe-guard --quick`**: scan `git diff HEAD`, run only the security + production-resilience passes (**skip comprehension/Pass 3 entirely**), skip each leaf's adaptive sub-pass, and report **only 🔴 CRITICAL** findings. Designed for mid-edit feedback loops. Target: under 10 seconds. The pre-commit hook should use this; the pre-push hook uses the default.
+
+**Flag precedence:** if both `--quick` and `--full` are passed, `--quick` wins (critical-only beats thorough; scope falls back to `git diff HEAD`). If neither is passed, run the default (diff HEAD, all passes).
 
 If `git diff HEAD` returns empty (working tree is clean), say: "No uncommitted changes found. Run `/vibe-guard --full` to scan the entire repo." Do not run the three passes on an empty diff.
 
 For `--full` scans: analyze all source code files tracked by git. Exclude `node_modules/`, `vendor/`, `dist/`, `build/`, `.git/`, lock files (`package-lock.json`, `yarn.lock`, `poetry.lock`), and generated files. Focus on files your team wrote.
 
 Announce before starting:
-> "Running Vibe Guard on [git diff / full repo]. Running 3 passes — production resilience, security, and comprehension. This takes 2–3 minutes..."
+> Default/full: "Running Vibe Guard on [git diff / full repo]. Running 3 passes — production resilience, security, and comprehension. This takes 2–3 minutes..."
+> Quick: "Running Vibe Guard (quick mode) on git diff — critical production + security issues only, skipping comprehension."
 
 ## Execution — Three Sequential Passes
 
 Run all three passes in full before producing the report. Do not stop early if issues are found.
+
+**Quick-mode execution:** If `--quick` was passed, run ONLY Pass 1 (production resilience) and Pass 2 (security), skip each pass's adaptive step, skip Pass 3 (comprehension) entirely, and filter the merged report to 🔴 CRITICAL findings only. Use the quick-mode output format below.
 
 ---
 
@@ -51,8 +57,20 @@ Analyze the scoped code for these AI failure patterns:
 
 **Resource Leaks**
 - Unclosed DB connections; unclosed file handles; unremoved event listeners; uncleared timers
+- Unbounded in-memory growth: global caches or maps with no eviction policy
 
-**Adaptive:** After the checklist — "What additional production risks are specific to this code's domain?"
+**Data Integrity**
+- Multi-step operations with no transaction boundary; read-modify-write without atomic update or optimistic concurrency
+- Missing idempotency on operations that must not execute twice (payments, emails, job dispatch)
+
+**Observability**
+- Errors caught with context stripped (no request ID, tenant, operation name)
+- No structured log or metric on critical failure paths — silent degradation invisible to on-call
+
+**Rollout Safety**
+- Required config not validated at startup; missing backward-compatible migration state; feature flag default not set
+
+**Adaptive:** After the checklist — "What additional production risks are specific to this code's domain?" (Skip in `--quick` mode.)
 
 ---
 
@@ -71,6 +89,8 @@ Analyze the scoped code for these security failure patterns:
 - Template injection: user input rendered inside template literals, Jinja2 `{{ var | safe }}`, EJS `<%- var %>`, or Pug without escaping
 - XSS: unescaped user input in HTML output
 - SSRF: user-supplied URLs or hostnames used in server-side HTTP requests without allowlist validation. Check `fetch(userUrl)`, `axios.get(req.body.url)`, webhook destinations.
+- NoSQL injection: user input passed as a query selector object (`db.findOne(JSON.parse(input))`) allows operator attacks
+- XML/XXE: user-controlled XML parsed without disabling external entity resolution
 
 **Input Validation Gaps**
 - User inputs reaching DB write operations without validation
@@ -84,6 +104,8 @@ Analyze the scoped code for these security failure patterns:
 - Broken access control; weak/missing JWT validation; low-entropy session tokens
 - CORS misconfiguration: wildcard (`*`) on authenticated endpoints; dynamic `Origin` reflection without allowlist; `Access-Control-Allow-Credentials: true` with permissive origin
 - Timing attack on auth: token or HMAC comparison using `===` or `==` instead of constant-time comparison (`crypto.timingSafeEqual` in Node.js, `hmac.compare_digest` in Python)
+- CSRF on cookie-based auth: no CSRF token, SameSite enforcement, or Origin/Referer check on state-changing endpoints
+- Missing refresh token rotation or session invalidation after logout/privilege change
 
 **Insecure Defaults**
 - HTTP instead of HTTPS; debug mode in prod paths; stack traces exposed to users
@@ -101,12 +123,25 @@ Analyze the scoped code for these security failure patterns:
 
 **Dependencies & Crypto**
 - MD5/SHA1 for passwords; Math.random() for security tokens; deprecated crypto algorithms
+- No proper KDF for passwords (use Argon2/bcrypt/scrypt); nonce/IV reuse; TLS verification disabled (`verify=False`, `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED=0`)
+- Dependency provenance: typosquatting-susceptible names, unreviewed packages, postinstall scripts, missing lockfile integrity (`npm ci` vs `npm install`)
 
-**Adaptive:** "What security risks are specific to this codebase's domain?"
+**Security Logging & Monitoring**
+- No audit log on login, privilege change, data export, payment
+- Webhook payload processed without signature verification
+- Failed auth attempts not logged or rate-limited
+
+**Business Logic & Race Conditions**
+- Double-spend / duplicate-action race: two requests pass a check before either commits the deduction
+- Privilege escalation via parameter tampering bypassing mass-assignment checks
+
+**Adaptive:** "What security risks are specific to this codebase's domain?" (Skip in `--quick` mode.)
 
 ---
 
 ### Pass 3 — Comprehension
+
+**Skip this pass entirely if `--quick` was passed.**
 
 Scan for cognitive debt markers:
 
@@ -119,6 +154,14 @@ Scan for cognitive debt markers:
 **Fragility Signals:** Code that breaks unexpectedly when modified; non-obvious tight coupling
 
 **Naming Opacity:** Generic names (`data`, `result`, `temp`) on non-trivial values; non-question-form booleans
+
+**Architectural Intent:** Code with no indication of why this approach was chosen, what tradeoff it embodies, or what alternative was rejected
+
+**Module Contracts:** Functions depending on unstated caller preconditions; producer/consumer coupling based on coincidental upstream behavior rather than stated interface
+
+**Temporal Coupling:** Async ordering dependencies; initialization races; teardown ordering assumptions under failure or shutdown
+
+**Dead Code / AI Over-Generation:** Unused exports, speculative abstractions, duplicate fallback paths that silently diverge
 
 For each flagged block generate:
 - **What it does:** 3–5 sentence plain-English explanation
@@ -191,6 +234,29 @@ Scope: git diff (uncommitted changes)
 
 SUMMARY: 0 critical · 0 warnings · 0 debt items
 ══════════════════════════════════════
+```
+
+### Quick-Mode Output
+
+When `--quick` is passed, emit the short form — critical-only, no warnings, no debt section:
+
+```
+VIBE GUARD — Quick
+───────────────────
+🔴 CRITICAL (2)
+  [vibe-secure] config.js:42  — hardcoded API key → use process.env.API_KEY
+  [vibe-check]  queries.js:87 — N+1 query in loop → batch with WHERE id IN (...)
+
+Run /vibe-guard (no flag) before push for full audit.
+```
+
+If quick-mode finds nothing:
+
+```
+VIBE GUARD — Quick
+───────────────────
+✅ No critical issues in uncommitted changes.
+Run /vibe-guard before push for the full audit.
 ```
 
 ## After the Report

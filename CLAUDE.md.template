@@ -1,0 +1,28 @@
+# Project quality gates — vibe-guard-skills
+
+> Drop this file at your project root as `CLAUDE.md` (or merge these rules into an existing one). Claude Code reads it on every session and treats these as project rules. Claude will apply them when it sees the triggering situation — e.g., when *you* ask Claude to commit or push, or when Claude generates code that matches the trigger (edits to `auth/`, a large new block, etc.). These rules cannot run on their own without an active Claude session; if you `git commit` outside of Claude they do nothing. For an automatic pre-push block regardless of whether Claude is active, use the pre-push hook (see main README).
+
+## When to auto-invoke the audits
+
+- **Before `git commit`** — run `/vibe-guard --quick` on the working-tree diff (`git diff HEAD`, which is what the skill uses; this includes both staged and unstaged changes). If it reports any 🔴 CRITICAL finding, stop and surface it to the user before continuing. Quick mode skips the comprehension pass and the adaptive sub-passes so it stays under ~10 seconds.
+- **Before `git push`** — run the full `/vibe-guard`. If critical findings exist, do not push; show the report and wait for the user.
+- **After editing anything under `auth/`, `payments/`, `billing/`, `session/`, or any file handling external user input** — run `/vibe-secure` on the diff before finishing the turn.
+- **After generating more than ~50 lines of new code in one edit** — run `/vibe-explain` on the diff so the user sees what was produced in plain English before accepting it.
+- **After touching SQL, ORM models, or any database write path** — run `/vibe-check` on the diff to catch N+1, missing transactions, and concurrent-write races.
+
+## Rules of the road
+
+- Never auto-apply fixes produced by any vibe-* skill. After the report, ask the user which findings to fix and show each proposed change for approval before editing.
+- Do not run `/vibe-guard --full` autonomously — it's a repo-wide scan and the user should be the one to ask for it.
+- If `git diff HEAD` is empty, do not run any of these skills — announce "clean working tree" instead.
+- Treat `(Needs verification)` findings as questions to the user, not as assertions. Ask before acting on them.
+
+## Install reminder
+
+If these skills aren't installed yet:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/vibe-guard-skills/main/install.sh | bash
+```
+
+(Replace `YOUR_GITHUB_USERNAME` with the actual GitHub org.)
