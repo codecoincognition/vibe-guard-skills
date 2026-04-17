@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-REPO_URL="https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/vibe-guard-skills/main"
+REPO_URL="https://raw.githubusercontent.com/codecoincognition/vibe-guard-skills/main"
 SKILLS=("vibe-guard" "vibe-check" "vibe-secure" "vibe-explain")
 FAILED=()
 

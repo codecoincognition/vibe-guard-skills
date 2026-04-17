@@ -31,10 +31,8 @@ A set of Claude Code skills that run a 3-pass audit at the end of every session:
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/vibe-guard-skills/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/codecoincognition/vibe-guard-skills/main/install.sh | bash
 ```
-
-> **Note for contributors:** Replace `YOUR_GITHUB_USERNAME` with `codecoincognition` (or the actual org) when the repo goes live.
 
 Installs to `~/.claude/skills/` (global) or `.claude/skills/` (project-local) automatically.
 

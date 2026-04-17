@@ -22,7 +22,6 @@
 If these skills aren't installed yet:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/vibe-guard-skills/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/codecoincognition/vibe-guard-skills/main/install.sh | bash
 ```
 
-(Replace `YOUR_GITHUB_USERNAME` with the actual GitHub org.)
