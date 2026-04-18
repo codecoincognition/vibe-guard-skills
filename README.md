@@ -12,6 +12,27 @@ A set of Claude Code skills that run a 3-pass audit at the end of every session:
 
 ---
 
+## Contents
+
+- [What it catches](#what-it-catches)
+- [Requirements](#requirements)
+- [Install](#install)
+- [How it works](#how-it-works)
+- [Usage](#usage)
+- [Auto-invoke with a project `CLAUDE.md`](#auto-invoke-with-a-project-claudemd)
+- [What each skill checks for](#what-each-skill-checks-for)
+  - [`/vibe-check` — Production Resilience](#vibe-check--production-resilience)
+  - [`/vibe-secure` — Security](#vibe-secure--security)
+  - [`/vibe-explain` — Comprehension / Cognitive Debt](#vibe-explain--comprehension--cognitive-debt)
+- [Sample Report](#sample-report)
+- [Skills](#skills)
+- [Philosophy](#philosophy)
+- [Pre-push hook (optional)](#pre-push-hook-optional)
+- [Coming soon](#coming-soon)
+- [License](#license)
+
+---
+
 ## What it catches
 
 | Pass | Skill | What it finds |
