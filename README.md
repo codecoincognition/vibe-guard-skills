@@ -384,4 +384,4 @@ MIT
 
 ---
 
-Built by [Vikas Sah](https://github.com/codecoincognition).
+Crafted by [Vikas Sah](https://github.com/codecoincognition).
