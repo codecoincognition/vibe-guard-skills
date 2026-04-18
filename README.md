@@ -372,9 +372,9 @@ git config --unset core.hooksPath
 
 ## Coming soon
 
-- v2: Team enforcement mode + CI/GitHub Actions integration
-- v2: Cross-platform ports (Cursor, Copilot, Codex/Windsurf)
-- v2: Language-specific checklists (Python, Go, Rust variants)
+- Support for **Codex**, **Cursor**, and **Aider** — same three-pass audit, ported to each tool's native rules/conventions format.
+- Team enforcement mode + CI/GitHub Actions integration.
+- Language-specific checklists (Python, Go, Rust variants).
 
 ---
 
