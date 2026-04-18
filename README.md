@@ -360,9 +360,3 @@ git config --unset core.hooksPath
 ## License
 
 MIT
-
----
-
-## GitHub Topics
-
-If you star this repo, also check: `claude-code` `claude-skills` `vibe-coding` `ai-coding` `code-review` `security-audit` `developer-tools`
