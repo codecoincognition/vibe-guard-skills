@@ -360,3 +360,7 @@ git config --unset core.hooksPath
 ## License
 
 MIT
+
+---
+
+Built by [Vikas Sah](https://github.com/codecoincognition).
