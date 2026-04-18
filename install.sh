@@ -28,7 +28,8 @@ mkdir -p "$INSTALL_DIR"
 # Download each skill (continue on failure, report at end)
 for skill in "${SKILLS[@]}"; do
   echo -n "  Downloading $skill... "
-  if curl -fsSL "$REPO_URL/skills/$skill.md" -o "$INSTALL_DIR/$skill.md" 2>/dev/null; then
+  mkdir -p "$INSTALL_DIR/$skill"
+  if curl -fsSL "$REPO_URL/skills/$skill.md" -o "$INSTALL_DIR/$skill/SKILL.md" 2>/dev/null; then
     echo "✓"
   else
     echo "✗ FAILED"
